@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using VkCoreRuslBot.Core;
 using VkCoreRuslBot.DataBaseDB;
 using VkNet;
 using VkNet.Model;

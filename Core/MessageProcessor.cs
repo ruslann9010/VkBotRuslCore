@@ -6,7 +6,7 @@ using VkNet;
 using VkNet.Abstractions;
 using VkNet.Model;
 
-namespace VkCoreRuslBot
+namespace VkCoreRuslBot.Core
 {
 	internal class MessageProcessor
 	{

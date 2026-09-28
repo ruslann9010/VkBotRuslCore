@@ -7,7 +7,7 @@ using VkNet;
 using VkNet.Abstractions;
 using VkNet.Model;
 
-namespace VkCoreRuslBot
+namespace VkCoreRuslBot.Core
 {
 	internal class VkLongPollReceiver
 	{
@@ -15,9 +15,6 @@ namespace VkCoreRuslBot
 		private readonly MessageProcessor _messageProcessor;
 		private readonly ulong _groupId;
 
-		// 1. Приватные поля для VkApi, groupId и MessageProcessor
-
-		// 2. Конструктор для их инициализации
 		public VkLongPollReceiver(VkApi vkApi, ulong groupId, MessageProcessor processor)
 		{
 			_vkApi = vkApi;
@@ -28,8 +25,6 @@ namespace VkCoreRuslBot
 
 		public async Task StartLoopAsync()
 		{
-			// а) Инициализация LongPoll: получаем Server, Key и начальный Ts через _vkApi.Groups.GetBotsLongPollServer
-
 			LongPollServerResponse serverResponse = _vkApi.Groups.GetLongPollServer(_groupId);
 			ulong currentTs = serverResponse.Ts;
 			while (true)
@@ -68,24 +63,6 @@ namespace VkCoreRuslBot
 				{
 					Console.WriteLine($"Ошибка: {ex.Message}");
 				}
-
-
-
-				// б) Запускаем while (true)
-				//    Внутри него обязательно используем try-catch (как на строках 31 и 80 вашего кода)
-
-				// в) Делаем запрос обновлений истории: _vkApi.Groups.GetBotsLongPollHistoryAsync
-				//    ОБЯЗАТЕЛЬНО передавайте туда актуальный Ts!
-
-				// г) Проверяем pollResponse.Updates на null. 
-				//    Если не null — ОБНОВЛЯЕМ переменную Ts новым значением из pollResponse.Ts!
-
-				// д) Бежим циклом foreach по pollResponse.Updates:
-				//    - Проверяем, что update.Instance — это MessageNew и message != null.
-				//    - Вытаскиваем userId и userText.
-				//    - Вызываем: await _processor.ProcessMessageAsync(userId, userText);
-
-				// е) В блоке catch обрабатываем ошибки сети и делаем await Task.Delay(3000);
 			}
 		}
 	}
