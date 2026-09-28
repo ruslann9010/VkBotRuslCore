@@ -30,18 +30,22 @@ namespace VkCoreRuslBot
 				{
 					try
 					{
-						var serverResponse = vkApi.Groups.GetLongPollServer(groupId);
-						var pollResponse = vkApi.Groups.GetBotsLongPollHistory(new BotsLongPollHistoryParams
+						LongPollServerResponse serverResponse = vkApi.Groups.GetLongPollServer(groupId);
+						BotsLongPollHistoryResponse pollResponse = vkApi.Groups.GetBotsLongPollHistory(new BotsLongPollHistoryParams
 						{
 							Server = serverResponse.Server,
 							Key = serverResponse.Key,
 							Ts = serverResponse.Ts,
 							Wait = 25
-						});
-						if (pollResponse.Updates == null) 
+						});			
+						if (pollResponse.Updates == null)			
+						{
+							Console.WriteLine("Бот не работает ошибка!");
 							continue;
+						}
 						long userId = 0;
 						string userText = "";
+						Console.WriteLine($"Запрос LongPoll выполнен. Получено событий: {pollResponse.Updates.Count}");
 						foreach (var update in pollResponse.Updates)
 						{
 							string eventType = update.Type?.ToString() ?? "";
