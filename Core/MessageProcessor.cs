@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VkCoreRuslBot.DataBaseDB;
+﻿using VkCoreRuslBot.DataBaseDB;
 using VkNet;
-using VkNet.Abstractions;
 using VkNet.Model;
 
 namespace VkCoreRuslBot.Core
@@ -22,7 +18,6 @@ namespace VkCoreRuslBot.Core
 			_vkApi = vkApi;
 		}
 
-
 		public async Task ProcessMessageAsync(long userId, string userText)
 		{
 			if (userId <= 0 || string.IsNullOrWhiteSpace(userText)) return;
@@ -38,7 +33,8 @@ namespace VkCoreRuslBot.Core
 				PeerId = userId,
 				Message = aiResponse
 			});
-			Console.WriteLine($"[Ответ отправлен] Пользователю {userId}");
+			User user = _vkApi.Users.Get(new [] { userId }).FirstOrDefault()!;
+			Console.WriteLine($"[Ответ отправлен] Пользователю {user.FirstName} {user.LastName}");
 		}
 	}
 }

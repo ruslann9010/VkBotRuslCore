@@ -42,10 +42,10 @@ namespace VkCoreRuslBot.Core
 					{
 						currentTs = pollResponse.Ts; 
 					}
-					foreach (GroupUpdate update in pollResponse.Updates)
+					foreach (GroupUpdate update in pollResponse.Updates!)
 					{
 						string eventType = update.Type?.ToString() ?? "";
-						var messageNew = update.Instance as MessageNew;
+						MessageNew messageNew = update.Instance as MessageNew;
 						if (!eventType.Contains("MessageNew", StringComparison.OrdinalIgnoreCase) &&
 							!eventType.Contains("message_new", StringComparison.OrdinalIgnoreCase))
 						{

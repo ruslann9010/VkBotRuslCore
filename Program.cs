@@ -3,6 +3,8 @@ using VkCoreRuslBot.Core;
 using VkCoreRuslBot.DataBaseDB;
 using VkNet;
 using VkNet.Model;
+using VkNet.Exception;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 
 namespace VkCoreRuslBot
@@ -11,101 +13,61 @@ namespace VkCoreRuslBot
 	{
 		static async Task Main(string[] args)
 		{
-			var config = new ConfigurationBuilder()
-			.SetBasePath(Directory.GetCurrentDirectory())
-			.AddJsonFile("appsettings.json", optional: false)
-			.Build();
+		    IConfigurationRoot config = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json", optional: false)
+				.Build();
 
 			string vkToken = config["VkBotSettings:Token"]!;
-			ulong groupId = ulong.Parse(config["VkBotSettings:GroupId"]!);
 			string scopeKey = config["AiSettings:ScopeKey"]!;
 
-			DatabaseManager dbManager = new DatabaseManager();
-			AiService aiService = new AiService(scopeKey);
-			VkApi vkApi = new VkApi();
-			vkApi.Authorize(new ApiAuthParams { AccessToken = vkToken });
+			if (vkToken is not { Length: >= 50 } || string.IsNullOrWhiteSpace(vkToken))
+				ExitWithError("Ошибка! ВК токен не заполнен или слишком короткий.");
 
-			MessageProcessor processor = new MessageProcessor(dbManager, aiService, vkApi);
-			VkLongPollReceiver vkLong = new VkLongPollReceiver(vkApi, groupId, processor);
-
-			Console.WriteLine("Бот успешно инициализирован и запускается...");
-			await vkLong.StartLoopAsync();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-			/*
-			while (true)
+			if (!ulong.TryParse(config["VkBotSettings:GroupId"], out ulong groupId))
+				ExitWithError("Ошибка! ID группы должен быть числом!");
+			
+			if(string.IsNullOrWhiteSpace(scopeKey))
+				ExitWithError("Ошибка: API-ключ ИИ (ScopeKey) не заполнен!");
+				
+			try
 			{
-				try
-				{
-					LongPollServerResponse serverResponse = vkApi.Groups.GetLongPollServer(groupId);
-					BotsLongPollHistoryResponse pollResponse = vkApi.Groups.GetBotsLongPollHistory(new BotsLongPollHistoryParams
-					{
-						Server = serverResponse.Server,
-						Key = serverResponse.Key,
-						Ts = serverResponse.Ts,
-						Wait = 25
-					});			
-					if (pollResponse.Updates == null)			
-					{
-						Console.WriteLine("Бот не работает ошибка!");
-						continue;
-					}
-					long userId = 0;
-					string userText = "";
-					Console.WriteLine($"Запрос LongPoll выполнен. Получено событий: {pollResponse.Updates.Count}");
-					foreach (var update in pollResponse.Updates)
-					{
-						string eventType = update.Type?.ToString() ?? "";
-						var messageNew = update.Instance as MessageNew;
-						if (messageNew != null && messageNew.Message != null)
-						{
-							userText = messageNew.Message.Text;
-							userId = messageNew.Message.FromId.Value;
-						}
-						if (!eventType.Contains("MessageNew", StringComparison.OrdinalIgnoreCase) &&
-							!eventType.Contains("message_new", StringComparison.OrdinalIgnoreCase))
-						{
-							continue;
-						}	
-						if (userId <= 0 || string.IsNullOrWhiteSpace(userText)) continue;
-						Console.WriteLine($"[Новое сообщение] От пользователя {userId}: {userText}");	
-						UserSession session = dbManager.GetOrCreateSession(userId);
-						string historyContext = session.ChatHistory;
-						string aiResponse = await aiService.GenerateResponseAsync(userText, historyContext);
-						string updatedHistory = historyContext + $"User: {userText}\nAI: {aiResponse}\n";
-						dbManager.UpdateChatHistory(userId, updatedHistory);
-						vkApi.Messages.Send(new MessagesSendParams
-						{
-							RandomId = new Random().Next(), 
-							PeerId = userId,                
-							Message = aiResponse            
-						});
-						Console.WriteLine($"[Ответ отправлен] Пользователю {userId}");
-					}
-				}
-				catch(Exception ex)
-				{	
-					Console.WriteLine($"Ошибка при получении обновлений ВК:{ex.Message + " \r\n " + ex.ToString() }  ");
-					await Task.Delay(3000); 
-				}
+				DatabaseManager dbManager = new DatabaseManager();
+				AiService aiService = new AiService(scopeKey);
+				await aiService.GetAccessTokenAsync();
+				VkApi vkApi = new VkApi();
+				vkApi.Authorize(new ApiAuthParams { AccessToken = vkToken });
+				vkApi.Groups.GetById(new [] { groupId.ToString() }, null, null);
+				MessageProcessor processor = new MessageProcessor(dbManager, aiService, vkApi);
+				VkLongPollReceiver vkLong = new VkLongPollReceiver(vkApi, groupId, processor);
+				Console.ForegroundColor = ConsoleColor.Green;
+				Console.WriteLine("\n[УСПЕХ] Бот инициализирован и запустился");
+				Console.ResetColor();
+				await vkLong.StartLoopAsync();
+			}
+			catch(HttpRequestException ex)
+			{
+				ExitWithError($"\n[ОШИБКА] Не удалось авторизоваться в GigaChat!\n" +
+					  $"Возможно, ScopeKey неверный или просрочен.\n" +
+					  $"Детали: {ex.Message}", isCritical: true);
+			}
+			catch (UserAuthorizationFailException ex)
+			{
+				ExitWithError($"Ошибка авторизации ВК: {ex.Message}", isCritical: true);
+			}
+			catch(Exception ex)
+			{
+				ExitWithError($"Непредвиденная ошибка при старте: {ex.Message}", isCritical: true);
 			}
 		}
-		catch (Exception criticalEx)
-		{ 
-			Console.WriteLine($"Критическая ошибка при старте приложения: {criticalEx.Message}");
-		}*/
+
+		private static void ExitWithError(string message, bool isCritical = false)
+		{
+			Console.ForegroundColor = isCritical ? ConsoleColor.Red : ConsoleColor.Yellow;
+			Console.WriteLine(message);
+			Console.ResetColor();
+			Console.ReadKey();
+			Environment.Exit(0);
 		}
 	}
 }

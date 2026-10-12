@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../VkCoreRuslBot.Tests/VkCoreRuslBot.Tests.csproj" Id="5564c9fc-b2de-43c8-a44c-d2e4e3ddba4e" />
   <Project Path="VkCoreRuslBot.csproj" />
 </Solution>

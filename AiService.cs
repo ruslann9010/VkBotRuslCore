@@ -36,7 +36,7 @@ namespace VkCoreRuslBot
 		/// Retrieves a valid access token, utilizing a cached token if it has not expired.
 		/// </summary>
 		/// <returns>A task that represents the asynchronous operation. The task result contains the active access token string.</returns>
-		private async Task<string> GetAccessTokenAsync()
+		public async Task<string> GetAccessTokenAsync()
 		{
 			HttpClientHandler handler = null!;
 			if (_cachedToken != string.Empty && DateTime.Now < _tokenExpiresAt)
@@ -57,8 +57,9 @@ namespace VkCoreRuslBot
 				{
 					new KeyValuePair<string, string>("scope", "GIGACHAT_API_PERS")
 				});
+
 				var response = await client.PostAsync("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", requestData);
-				response.EnsureSuccessStatusCode();
+				HttpResponseMessage res = response.EnsureSuccessStatusCode();
 
 				string json = await response.Content.ReadAsStringAsync();
 				using (JsonDocument doc = JsonDocument.Parse(json))
@@ -71,7 +72,6 @@ namespace VkCoreRuslBot
 				return _cachedToken;
 			}
 		}
-
 
 
 		/// <summary>
@@ -97,7 +97,6 @@ namespace VkCoreRuslBot
 					 new { role = "user", content = fullPrompt }
 				 },
 					temperature = 0.7 };
-			
 				string jsonPayload = JsonSerializer.Serialize(requestBody);
 				var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 				var response = await client.PostAsync("https://api.giga.chat/v1/chat/completions", content);
