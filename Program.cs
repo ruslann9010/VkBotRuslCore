@@ -4,7 +4,6 @@ using VkCoreRuslBot.DataBaseDB;
 using VkNet;
 using VkNet.Model;
 using VkNet.Exception;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 
 namespace VkCoreRuslBot
