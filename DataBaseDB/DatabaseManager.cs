@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.EntityFrameworkCore;
+
 namespace VkCoreRuslBot.DataBaseDB
 {
 	/// <summary>
@@ -6,12 +8,16 @@ namespace VkCoreRuslBot.DataBaseDB
 	/// </summary>
 	public class DatabaseManager
 	{
+		private readonly DbContextOptions<BotDbContext> _options;
+
 		public DatabaseManager()
 		{
-			using (BotDbContext db = new BotDbContext())
-			{
-				db.Database.EnsureCreated();
-			}
+			_options = new DbContextOptionsBuilder<BotDbContext>().Options;
+		}
+
+		public DatabaseManager(DbContextOptions<BotDbContext> options)
+		{
+			_options = options;
 		}
 
 		/// <summary>
@@ -21,7 +27,7 @@ namespace VkCoreRuslBot.DataBaseDB
 		/// <returns>The found or newly created <see cref="UserSession"/> object.</returns>
 		public UserSession GetOrCreateSession(long userId)
 		{
-			using (BotDbContext db = new BotDbContext())
+			using (BotDbContext db = new BotDbContext(_options))
 			{
 				UserSession user = db.Users.FirstOrDefault(u => u.UserID == userId)!;
 				if (user == null)

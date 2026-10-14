@@ -7,8 +7,15 @@ namespace VkCoreRuslBot.DataBaseDB
 	/// <summary>
 	/// Database context for the bot, handling entity mapping and database connections.
 	/// </summary>
-	internal class BotDbContext : DbContext
+	public class BotDbContext : DbContext
 	{
+		public BotDbContext()
+		{
+		}
+
+		public BotDbContext(DbContextOptions<BotDbContext> options) : base(options)
+		{
+		}
 		/// <summary>
 		/// Gets or sets the database set for managing user sessions.
 		/// </summary>
@@ -19,7 +26,10 @@ namespace VkCoreRuslBot.DataBaseDB
 		/// <param name="optionsBuilder">A builder used to create or modify options for this context.</param>
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
-			optionsBuilder.UseSqlite("Data Source=bot.db");
+			if (!optionsBuilder.IsConfigured)
+			{
+				optionsBuilder.UseSqlite("Data Source=bot.db");
+			}
 		}
 	}
 }
